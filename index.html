@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <style>
+      /* Add some custom styles for the start screen */
+      #start-screen {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+      }
+      /* Add some custom styles for the Pokemon card */
+      .card {
+        max-width: 400px;
+        margin: 0 auto;
+        text-align: center;
+        padding: 20px;
+        margin-top: 50px;
+      }
+      .card img {
+        width: 100%;
+        max-height: 300px;
+      }
+      /* Hide the Pokemon card by default */
+      .card {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="start-screen">
+      <div class="container">
+        <h1 class="display-4">Welcome to the Pokemon Randomizer</h1>
+        <p class="lead">Press the button below to generate a random Pokemon</p>
+        <button class="btn btn-primary" id="start-button">Start</button>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card" id="pokemon-card">
+            <img id="pokemon-image" src="" alt="Pokemon" />
+            <h5 class="card-title" id="pokemon-name"></h5>
+            <p class="card-text" id="pokemon-type"></p>
+            <p class="card-text" id="pokemon-description"></p>
+            <button class="btn btn-primary" id="generate-button">
+              Generate Pokemon
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Get references to the HTML elements we'll be updating
+      var startButton = document.getElementById("start-button");
+      var generateButton = document.getElementById("generate-button");
+      var pokemonCard = document.getElementById("pokemon-card");
+      var pokemonImage = document.getElementById("pokemon-image");
+      var pokemonName = document.getElementById("pokemon-name");
+      var pokemonType = document.getElementById("pokemon-type");
+      var pokemonDescription = document.getElementById("pokemon-description");
+      var startScreen = document.getElementById("start-screen");
+
+      startButton.addEventListener("click", function () {
+        startScreen.style.display = "none";
+        pokemonCard.style.display = "block";
+      });
+
+      // Check if the Pokemon data is already in session storage
+      var pokemonsData = sessionStorage.getItem("pokemonsData");
+
+      if (!pokemonsData) {
+        // If not, fetch the data from the API
+        fetch("https://pokeapi.co/api/v2/pokemon?limit=807")
+          .then((response) => response.json())
+          .then((data) => {
+            // Store the data in session storage
+            sessionStorage.setItem("pokemonsData", JSON.stringify(data));
+            pokemonsData = data;
+          })
+          .catch((error) => console.log("error", error));
+      } else {
+        // If it's already in session storage, parse it back into a JavaScript object
+        pokemonsData = JSON.parse(pokemonsData);
+      }
+
+      // Add an event listener to the generate button
+      generateButton.addEventListener("click", function () {
+        // Pick a random Pokemon from the data
+        var randomIndex = Math.floor(
+          Math.random() * pokemonsData.results.length
+        );
+        var randomPokemon = pokemonsData.results[randomIndex];
+        var pokemonUrl = randomPokemon.url;
+        fetch(pokemonUrl)
+          .then((response) => response.json())
+          .then((pokemonData) => {
+            // Update the HTML elements with the Pokemon's information
+            pokemonImage.src = pokemonData.sprites.front_default;
+            pokemonName.innerHTML = pokemonData.name;
+            pokemonType.innerHTML =
+              "Type: " +
+              pokemonData.types.map((type) => type.type.name).join(", ");
+            //fetching the english flavor text
+            var flavor_text_url = pokemonData.species.url;
+            fetch(flavor_text_url)
+              .then((response) => response.json())
+              .then((flavorData) => {
+                var english_flavor_text = flavorData.flavor_text_entries.find(
+                  (entry) => entry.language.name === "en"
+                ).flavor_text;
+                pokemonDescription.innerHTML = english_flavor_text;
+              });
+          })
+          .catch((error) => console.log("error", error));
+      });
+    </script>
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
